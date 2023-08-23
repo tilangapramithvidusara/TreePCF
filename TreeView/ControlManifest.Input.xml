@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+<!-- 1.23.134.4994  "1.0.42" -->
+  <control namespace="Seer365Controls" constructor="TreeView" version="1.23.206" display-name-key="TreeView" description-key="TreeView description" control-type="standard" >
+    <property 
+      name="sampleProperty" 
+      display-name-key="Property_Display_Key" 
+      description-key="Property_Desc_Key" 
+      of-type="SingleLine.Text" 
+      usage="bound" 
+      required="true" 
+    />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="css/TreeView.css" order="1" />
+    </resources>
+  </control>
+</manifest>
