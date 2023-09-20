@@ -19,19 +19,11 @@ export const openCreatePane = async (
     }
   ]
   const templateData =  await window.parent.Xrm.Page.data.entity.getEntityReference();
+  
 
   var entityFormOptions: any = {};
 
   entityFormOptions["entityName"] = node?.nextLevelLogicalName
-
-  // entityFormOptions["entityName"] = LogicalNames.SURVEY === node.a_attr.LogicalName
-  // ? LogicalNames.CHAPTER 
-  // : LogicalNames.CHAPTER === node.a_attr.LogicalName 
-  // ? LogicalNames.SECTION 
-  // : LogicalNames.SECTION === node.a_attr.LogicalName 
-  // ? LogicalNames.QUESTION 
-  // : LogicalNames.QUESTION === node.a_attr.LogicalName
-  // ? LogicalNames.ANSWER : LogicalNames.ANSWER;
 
   entityFormOptions["useQuickCreateForm"] = true;
   if (LogicalNames.CHAPTER === node.a_attr.LogicalName)
@@ -41,6 +33,30 @@ export const openCreatePane = async (
 
   parameterFormOptions[node.a_attr.LogicalName] = parentData;
   parameterFormOptions["gyde_surveytemplate"] = templateData;
+  if (
+    LogicalNames.GRID === node.a_attr.LogicalName ||
+    LogicalNames.ANSWER === node.nextLevelLogicalName
+  ) {
+    parameterFormOptions["gyde_relatedquestion"] = parentData;
+    const nodeGyde = await window.parent.Xrm.WebApi.retrieveRecord(node.a_attr.LogicalName, node?.id, "?$select=gyde_internalid")
+    parameterFormOptions['gyde_parentid'] = nodeGyde['gyde_parentid'];
+  }
+
+  if (LogicalNames.QUESTION === node.a_attr.LogicalName && (node?.nextLevelLogicalName === LogicalNames?.GRID || node?.nextLevelLogicalName === LogicalNames?.ANSWER)) {
+    const templateId = templateData.id?.replace("{", "").replace("}", "");
+    
+    const nodeGyde = await window.parent.Xrm.WebApi.retrieveRecord(node.a_attr.LogicalName, node?.id, "?$select=gyde_internalid")
+    parameterFormOptions['gyde_parentid'] = nodeGyde['gyde_internalid'];
+    // window.parent.Xrm.WebApi.retrieveRecord("gyde_surveytemplatechaptersectionquestion", "79ca0bc1-b948-ee11-be6f-6045bdd0ef22", "?$select=gyde_internalid").then(
+    //   function success(result) {
+    //     console.log(result);
+    //     console.log(result["gyde_internalid"])
+    //   })
+
+  }
+ 
+  if (LogicalNames.QUESTION == node?.a_attr.LogicalName && (node?.nextLevelLogicalName == LogicalNames.GRID))
+    parameterFormOptions["gyde_surveytemplatequestion"] = parentData;
   await Promise.all([templateData]);
   try {
     const response = await window.parent.Xrm.Navigation.openForm(entityFormOptions, parameterFormOptions)
@@ -59,8 +75,8 @@ export const openCreatePane = async (
       } catch (error) {
         console.log('error catch ====> ', error);
         notification.error({
-          message: "Error",
-          description: "Data load failed. Plz Reload Again..!",
+          message: node?.webMessage?.errorText,
+          description: node?.webMessage?.dataLoadingFailed,
         });
         callback({
           success: true,
@@ -81,8 +97,8 @@ export const openCreatePane = async (
     console.log("error =====> ", error);
 
     notification.error({
-      message: "Error",
-      description: "Add process failed. Plz Try Again..!",
+      message: node?.webMessage?.errorText,
+      description: node?.webMessage?.addProcessFailed,
     });
     callback({
       success: false,

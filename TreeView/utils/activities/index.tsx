@@ -2,6 +2,7 @@ import * as React from "react";
 
 import {openCreatePane} from "../openCreateForm";
 import { checkType, setEntity, setFormName } from "../validations";
+import { LogicalNames } from "../../constants";
 
 declare global {
   interface Window {
@@ -37,10 +38,20 @@ export const createDataLoadRequest = async (node?: any): Promise<any[]> => {
       };
     }
 
-    var surveyTemplate = await window.parent.Xrm.Page.data.entity
+    let surveyTemplate = null;
+
+    const currentLogicalName = await window.parent.Xrm.Page.ui._formContext.contextToken.entityTypeName
+
+    if (currentLogicalName === LogicalNames?.SURVEY) {
+      surveyTemplate = await window.parent.Xrm.Page.data.entity
       .getId()
       .replace("{", "")
       .replace("}", "");
+    } else {
+      surveyTemplate = await 
+        window.parent.Xrm.Page.getAttribute(LogicalNames?.SURVEY).getValue()[0]?.id?.replace("{", "").replace("}", "")
+    }
+
 
     req.surveytemplateid = surveyTemplate;
     req.getMetadata = function () {
@@ -62,6 +73,8 @@ export const createDataLoadRequest = async (node?: any): Promise<any[]> => {
       })
       .then(function (responseBody: any) {
         const resData = JSON.parse(responseBody.nodedata);
+        console.log('lll ==> ', (node && node.id && resData.length > 0), !(node && node.id));
+        
         const data =
           (node && node.id && resData.length > 0) || !(node && node.id)
             ? dataFomater(node, JSON.parse(responseBody.nodedata))
@@ -101,7 +114,7 @@ export const updateDataRequest = async (
 const dataFomater = (node: any, dataSet: any): any => {
   let children = [];
   if (node && node.id) {
-    children = arrayFormater(dataSet, node?.level);
+    children = arrayFormater(dataSet, node?.level, node?.isSubLocation);
     return children;
   } else {
     const icon = dataSet.icon;
@@ -122,6 +135,7 @@ const dataFomater = (node: any, dataSet: any): any => {
       haveNextlevel: dataSet.nextLevelLogicalName ? true : false,
       isVisible: dataSet.hasVisibility ? dataSet.isVisible : null,
       expanded: false,
+      isSubLocation: false
     };
     if (dataSet.children) {
       children = arrayFormater(dataSet.children, 1);
@@ -131,7 +145,7 @@ const dataFomater = (node: any, dataSet: any): any => {
   }
 };
 
-const arrayFormater = (array: any[], previousLevel: number): any => {
+const arrayFormater = (array: any[], previousLevel: number, isSubLocation?: boolean): any => {
   for (let i = 0; i < array.length; i++) {
     let dataSet = array[i];
     const icon = dataSet.icon;
@@ -147,10 +161,11 @@ const arrayFormater = (array: any[], previousLevel: number): any => {
       title: dataSet.text,
       hasChildren: dataSet.children,
       disableExpand: !dataSet.children,
-      level: previousLevel + 1,
+      level: isSubLocation ? 1 : previousLevel + 1,
       haveNextlevel: dataSet.nextLevelLogicalName ? true : false,
       isVisible: dataSet.hasVisibility ? dataSet.isVisible : null,
       expanded: false,
+      isSubLocation: isSubLocation
     };
     array[i] = dataSet;
   }

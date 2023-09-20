@@ -76,19 +76,133 @@ const TreeView: React.FC = () => {
   const [type, setType] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [deleteLoader, setDeleteLoader] = useState<boolean>(false);
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [isSubLocation, setIsSubLocation] = useState<boolean>(false);
+  const [expandedNodeDataArray, setExpandedNodeDataArray] = useState<any>([]);
+  const [isDisable, setIsDisable] = useState<boolean>(false);
+
+  const [errorText, setErrorText] = useState<string>("Error");
+  const [somethingWentWrong, setSomethingWentWrong] = useState<string>('Something went wrong. Please Try Again..!');
+  const [dataLoadingFailed, setDataLoadingFailed] = useState<string>("Data load failed. Plz Reload Again..!");
+  const [addProcessFailed, setAddProcessFailed] = useState<string>("Add process failed. Plz Try Again..!");
+  const [dropAllowOnlySameLevel, setDropAllowOnlySameLevel] = useState<string>("Drop allow only same level..!");
+  const [deleteConfirmation, setDeleteConformation] = useState<string>("Are you sure you want to delete this ?")
+
 
   let parentValue: any = null;
   let parentValueDrop: any = null;
 
+  const loadResourceString = async () => {
+
+    const url = await window.parent.Xrm.Utility.getGlobalContext().getClientUrl();
+    const language = await window.parent.Xrm.Utility.getGlobalContext().userSettings.languageId
+    const webResourceUrl = `${url}/WebResources/gyde_localizedstrings.${language}.resx`;
+
+    try {
+      const response = await fetch(`${webResourceUrl}`);
+      const data = await response.text();
+      const filterKeys = ['errorText', 'somethingWentWrong', 'dataLoadingFailed', 'addProcessFailed', 'dropAllowOnlySameLevel', 'deleteConfirmation']; // Replace with the key you want to filter
+      filterKeys.map((filterKey: string, index: number) => {
+        const parser = new DOMParser();
+        // Parse the XML string
+        const xmlDoc = parser.parseFromString(data, "text/xml");
+        // Find the specific data element with the given key
+        const dataNode: any = xmlDoc.querySelector(`data[name="${filterKey}"]`);
+        // Extract the value from the data element
+        const value: any = dataNode?.querySelector("value").textContent;
+
+        if (index === 0 && value) {
+          setErrorText(value)
+        }
+        if (index === 1 && value) {
+          setSomethingWentWrong(value)
+        }
+        if (index === 2 && value) {
+          setDataLoadingFailed(value)
+        } 
+        if (index === 3 && value) {
+          setAddProcessFailed(value)
+        }
+        if (index === 4 && value) {
+          setDropAllowOnlySameLevel(value)
+        }
+        if (index === 4 && value) {
+          setDeleteConformation(value)
+        }
+        console.log('data ====> ',  index, value); 
+      });
+      // this.setState({ data });
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  }
+
+  const retriveTemplateHandler = async () => {
+    try {
+      const currentLocation = await window.parent.Xrm.Page.ui._formContext.contextToken.entityTypeName;
+      let surveyTemplate = ''
+      if (currentLocation === LogicalNames?.SURVEY) {
+        surveyTemplate = await window.parent.Xrm.Page.data.entity
+          .getId()
+          .replace("{", "")
+          .replace("}", "");
+      } else {
+        surveyTemplate = await window.parent.Xrm.Page.getAttribute("gyde_surveytemplate")?.getValue()[0]?.id?.replace("{", "")
+        .replace("}", "");
+      }
+      
+      console.log('id ===> ', surveyTemplate);
+      
+      window.parent.Xrm.WebApi.retrieveRecord("gyde_surveytemplate", surveyTemplate, "?$select=statuscode").then(
+        function success(result: any) {
+            console.log("result status ====>", result.statuscode);
+            if (result.statuscode == 528670003 || result.statuscode == 528670005 || result.statuscode == 2) {
+              setIsDisable(true)
+            } else {
+              setIsDisable(false);
+            }
+            // perform operations on record retrieval
+        },
+        function (error: any) {
+            console.log("error message ====> ", error.message);
+            setIsDisable(false);
+            // handle error conditions
+        }
+      );
+    } catch (error: any) {
+      console.log("error22 message ====> ", error);
+      setIsDisable(false);
+    }
+  }
+
   const dataLoader = useCallback(async () => {
-    const res = await createDataLoadRequest();
-    console.log('res data ===> ', res);
-    
+    const currentLocation = await window.parent.Xrm.Page.ui._formContext.contextToken.entityTypeName;
+    let res = [];
+    if (currentLocation === LogicalNames?.SURVEY) {
+      res = await createDataLoadRequest();
+    } else {
+      // NEED CREATE setIsSubLocation FALSE AGAINST IT CAME FROM THER TO RIBBON
+      setIsSubLocation(true);
+      const currentEntityId = await window.parent.Xrm.Page.data.entity
+      .getId()
+      .replace("{", "")
+      .replace("}", "")
+      res = await createDataLoadRequest({
+        id: currentEntityId,
+        a_attr: {
+          LogicalName: currentLocation
+        },
+        isSubLocation: true,
+      });
+    }
     setGData(res);
+    loadResourceString();
+    setInitialLoading(false);
   }, []);
 
   React.useEffect(() => {
     dataLoader();
+    retriveTemplateHandler();
     // setGData(res_one);
   }, [])
 
@@ -133,8 +247,8 @@ const TreeView: React.FC = () => {
         parentValue = null;
         parentValueDrop = null;
         notification.error({
-          message: "Error",
-          description: "Drop allow only same lavel..!",
+          message: errorText,
+          description: dropAllowOnlySameLevel,
         });
       } else {
         if (parentValue?.a_attr?.LogicalName === LogicalNames?.SURVEY) {
@@ -255,6 +369,44 @@ const TreeView: React.FC = () => {
     setDropdownVisible(false);
   };
 
+  const getAllDescendants = (parentId: any, tree: any[], flag?: boolean) => {
+    const descendants = [];
+    const queue = [parentId];
+  
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      const node: any = findNodeByIdData(currentId, tree);
+      
+  
+      if (node) {
+        if (parentId != currentId)
+          descendants.push(currentId);
+        else if (flag && parentId == currentId)
+          descendants.push(currentId);
+        if (node?.children?.length)
+          queue.push(...node?.children?.map((child: any) => child.id));
+      }
+    }
+    return descendants;
+  };
+
+  const findNodeByIdData = (id: any, node: any) => {
+    
+    if (node.id === id) {
+      return node;
+    }
+  
+    if (node?.children?.length) {
+      for (const child of node.children) {
+        const found: any = findNodeByIdData(id, child);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
+  };
+
   const onClick: MenuProps["onClick"] = ({ key }) => {
     switch (key) {
       case "1": {
@@ -291,26 +443,38 @@ const TreeView: React.FC = () => {
 
         if (type === "NOTHING") break;
         setType(type);
-        openSidePaneHandler(rightClickedRecord, (response: any) => {
+        openSidePaneHandler({...rightClickedRecord, webMessage: {errorText, dataLoadingFailed, addProcessFailed, somethingWentWrong}}, (response: any) => {
           console.log('final res ====> ', response);
+          
           if (response.success && response.dataLoadSuccess) {
+            setDeleteLoader(true);
             const res_two = response.data;
             if (rightClickedRecord.level === 1) {
-              setGData(res_two);
+              setGData([]);
+              setExpandedKeys([]);
+              setTimeout(() => {
+                setGData(res_two);
+                setDeleteLoader(false);
+              }, 400)
+              // setGData(res_two);
             } else { 
-              if (res_two.length === 0 || (rightClickedRecord.level + 1) === res_two[0].level) {
-                addObjectToTree(gData[0], rightClickedRecord.key, res_two)
-              }
-              setGData((prevTreeData: any) => {
-                const updatedTreeData = cloneDeep(gData);
-                const parentNode = updatedTreeData.find((n: { key: any; }) => n?.key === rightClickedRecord.key);
-                  if (parentNode) {
-                    // Update the parent node with the new child nodes
-                    parentNode.children = res_two;
-                    Object.assign(parentNode.children, res_two);
-                  }
-                  return updatedTreeData;
-                });
+              let expanedList = expandedKeys;
+              setExpandedKeys([]);
+              addObjectToTree(gData[0], rightClickedRecord.key, res_two)
+                  setGData((prevTreeData: any) => {
+                    const updatedTreeData = cloneDeep(gData);
+                    const parentNode = updatedTreeData.find((n: { key: any; }) => n?.key === rightClickedRecord.key);
+                      if (parentNode) {
+                        // Update the parent node with the new child nodes
+                        parentNode.children = res_two;
+                        Object.assign(parentNode.children, res_two);
+                      }
+                      return updatedTreeData;
+              });
+              const descendants: any = getAllDescendants(rightClickedRecord.key, rightClickedRecord);
+              
+              setExpandedKeys((prevNodes) => expanedList.filter((id: any) => !descendants.includes(id)));
+              setDeleteLoader(false)
             }
             
           }
@@ -346,30 +510,64 @@ const TreeView: React.FC = () => {
     if (response && response.error) {
       parentValue = null;
       notification.error({
-        message: "Error",
-        description: "Something went wrong. Please Try Again..!",
+        message: errorText,
+        description: somethingWentWrong,
       });
       setDeleteLoader(false);
     } else {
       console.log('success delete');
-      const nodeData = await createDataLoadRequest(parentValue);
-      console.log("treeData pppp ",nodeData);
-      addObjectToTree(gData[0], parentValue.key, nodeData);
-      setGData(() => {
-        const updatedTreeData = cloneDeep(gData);
-        const parentNode = updatedTreeData.find(
-            (n) => n?.key === parentValue.key
-        );
-        if (parentNode) {
-          parentNode.children = nodeData;
-          Object.assign(parentNode.children, nodeData);
-        }
-        return updatedTreeData;
-      });
+      
+      if (rightClickedRecord.level == 2) {
+        const nodeData = await createDataLoadRequest();
+        console.log("treeData pppp ",nodeData);
+        setExpandedKeys([]);
+        setTimeout(() => {
+          setGData(nodeData);
+        }, 400)
+        
+      } else {
+        const nodeData = await createDataLoadRequest(parentValue);
+        console.log("treeData1 pppp ",nodeData);
+        const expanedList = expandedKeys;
+        setExpandedKeys([]);
+        addObjectToTree(gData[0], parentValue.key, nodeData);
+        setGData(() => {
+          const updatedTreeData = cloneDeep(gData);
+          const parentNode = updatedTreeData.find(
+              (n) => n?.key === parentValue.key
+          );
+          if (parentNode) {
+            parentNode.children = nodeData;
+            Object.assign(parentNode.children, nodeData);
+          }
+          return updatedTreeData;
+        });
+        
+        const nodeRelateds: any = [];
+        findIds(expandedNodeDataArray, parentValue.key, nodeRelateds);
+        const descendants: any = getAllDescendants(parentValue.key, parentValue);
+
+        setExpandedKeys((prevNodes) => expanedList.filter((id: any) => !nodeRelateds.includes(id)));
+        setDeleteLoader(false)
+        
+      }
+      
       setDeleteLoader(false);
       parentValue = null;
     }
   };
+
+  const findIds = (expandedNodeDataArray: any[], parentValuekey: string, keySet: any[]) => {
+    keySet.push(parentValuekey);
+    let expandedDataGet = expandedNodeDataArray?.find((exData) => exData.parentKey == parentValuekey)
+
+    if (expandedDataGet?.data?.length) {
+      expandedDataGet?.data?.map((item: any) => {
+        findIds(expandedNodeDataArray, item?.key, keySet);
+      });
+    }
+      
+  }
 
   const setVisibleRecord = async() => {
     setDeleteLoader(true);
@@ -381,8 +579,8 @@ const TreeView: React.FC = () => {
     if(response.error){
       setDeleteLoader(false);
       notification.error({
-        message: "Error",
-        description: "Something went wrong. Plz Try Again..!",
+        message: errorText,
+        description: somethingWentWrong,
       });
     } else {
       const dataVal = gData;
@@ -422,27 +620,24 @@ const TreeView: React.FC = () => {
 
   let data = gData;
 
-  function addObjectToTree(tree: any, key: any, newObject: any[]) {    
+  function addObjectToTree(tree: any, key: any, newObject: any, isReset?: boolean) {        
     if (tree.key === key) {
-      tree.children = newObject;
+      isReset ? tree.children = newObject?.children
+      : tree.children = newObject;
     } else if (tree.children) {
       tree.children.forEach((child: any) =>
         addObjectToTree(child, key, newObject)
       );
     } else {
-      console.log('elese [[[[[[[');
+      // console.log('elese [[[[[[[');
     }
   }
 
   function findAndChange(arr: any, id: any, newValue: any, attry: any) {
     for (let i = 0; i < arr.length; i++) {
       if (arr[i].id === id) {
-        console.log('found =====> ', arr[i]);
         arr[i] = newValue;
-        console.log('found111 =====> ', arr[i]);
         Object.assign(arr[i], newValue);
-        console.log('found111www =====> ', arr[i]);
-        // arr[i][attry] = newValue;
         return true;
       }
       if (arr[i].children && arr[i].children.length > 0) {
@@ -486,15 +681,23 @@ const TreeView: React.FC = () => {
       !(node.a_attr.LogicalName === LogicalNames.SURVEY) &&
       node.hasChildren
     ) {
-      const res_two = await createDataLoadRequest(node);
+      const res_two = await createDataLoadRequest({...node, isSubLocation: false});
+      setExpandedNodeDataArray([...expandedNodeDataArray, {data: res_two, parentKey: node.key,}]);
       console.log('res two ===> ', res_two);
       
       node.children = res_two;
       if (
         res_two.length === 0 ||
         node.level + 1 === res_two[0].level
-      )
-        addObjectToTree(gData[0], node.key, res_two);
+      ) {
+        if (isSubLocation) {
+          gData.map((gItem: any) => addObjectToTree(gItem, node.key, res_two))
+          // addObjectToTree([{...gData}], node.key, res_two);
+        } else {
+          addObjectToTree(gData[0], node.key, res_two);
+        }
+      }
+        // addObjectToTree(gData[0], node.key, res_two);
       setGData((prevTreeData: any) => {
         // const updatedTreeData = [...prevTreeData]
         const updatedTreeData = cloneDeep(gData);
@@ -515,13 +718,14 @@ const TreeView: React.FC = () => {
 
   return (
     <div className="custom-container" id="custom-container">
-      {gData && gData.length > 0 ? (
+      { !initialLoading ? (
         <div id="treeElement">
           <Spin spinning={deleteLoader}>
             <DirectoryTree
               className="draggable-tree"
               defaultExpandedKeys={expandedKeys}
-              draggable
+              expandedKeys={expandedKeys}
+              draggable={!isSubLocation && !isDisable}
               blockNode
               onDrop={onDrop}
               treeData={gData}
@@ -534,6 +738,7 @@ const TreeView: React.FC = () => {
               onSelect={(selectedKeys, e) => onClickNode(selectedKeys, e)}
               switcherIcon={<DownOutlined />}
               loadData={onLoadHandler}
+              loadedKeys={expandedKeys}
               titleRender={(node: any) => {
                 return (
                   <span className="ant-tree-node-content-wrapper">
@@ -548,7 +753,7 @@ const TreeView: React.FC = () => {
               }}
             />
           </Spin>
-          {dropdownVisible && (
+          {dropdownVisible && !isSubLocation && !isDisable && (
             <Dropdown
               menu={{ items, onClick }}
               open={dropdownVisible}
@@ -576,7 +781,7 @@ const TreeView: React.FC = () => {
               setIsModalOpen(false);
             }}
           >
-            <p>Are you sure you want to delete this ?</p>
+            <p>{deleteConfirmation}</p>
           </Modal>
         </div>
       ) : (
