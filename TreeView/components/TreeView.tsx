@@ -10,6 +10,7 @@ import Dropdown from "antd/es/dropdown";
 import openSidePane from "../utils/openSidePane";
 import { Modal, notification, Spin } from "antd";
 import { render } from 'react-dom';
+import { languageConstantsForCountry } from "../constants/languageConstants";
 
 import {
   DownOutlined,
@@ -38,6 +39,7 @@ import {
 import { res_one, res_two } from "./sample_real_data";
 
 import cloneDeep from "lodash.clonedeep";
+import { loadResourceString } from "../apis/xrmRequests";
 
 const { LogicalNames, Texts, FormTypes, STATUS_CODE } = Constants;
 
@@ -81,61 +83,20 @@ const TreeView: React.FC = () => {
   const [expandedNodeDataArray, setExpandedNodeDataArray] = useState<any>([]);
   const [isDisable, setIsDisable] = useState<boolean>(false);
 
-  const [errorText, setErrorText] = useState<string>("Error");
-  const [somethingWentWrong, setSomethingWentWrong] = useState<string>('Something went wrong. Please Try Again..!');
-  const [dataLoadingFailed, setDataLoadingFailed] = useState<string>("Data load failed. Plz Reload Again..!");
-  const [addProcessFailed, setAddProcessFailed] = useState<string>("Add process failed. Plz Try Again..!");
-  const [dropAllowOnlySameLevel, setDropAllowOnlySameLevel] = useState<string>("Drop allow only same level..!");
-  const [deleteConfirmation, setDeleteConformation] = useState<string>("Are you sure you want to delete this ?")
-
+  // const [errorText, setErrorText] = useState<string>("Error");
+  // const [somethingWentWrong, setSomethingWentWrong] = useState<string>('Something went wrong. Please Try Again..!');
+  // const [dataLoadingFailed, setDataLoadingFailed] = useState<string>("Data load failed. Plz Reload Again..!");
+  // const [addProcessFailed, setAddProcessFailed] = useState<string>("Add process failed. Plz Try Again..!");
+  // const [dropAllowOnlySameLevel, setDropAllowOnlySameLevel] = useState<string>("Drop allow only same level..!");
+  // const [deleteConfirmation, setDeleteConformation] = useState<string>("Are you sure you want to delete this ?")
+  const [languageConstants, setLanguageConstants] = useState<any>(
+    languageConstantsForCountry.en
+  );
 
   let parentValue: any = null;
   let parentValueDrop: any = null;
 
-  const loadResourceString = async () => {
 
-    const url = await window.parent.Xrm.Utility.getGlobalContext().getClientUrl();
-    const language = await window.parent.Xrm.Utility.getGlobalContext().userSettings.languageId
-    const webResourceUrl = `${url}/WebResources/gyde_localizedstrings.${language}.resx`;
-
-    try {
-      const response = await fetch(`${webResourceUrl}`);
-      const data = await response.text();
-      const filterKeys = ['errorText', 'somethingWentWrong', 'dataLoadingFailed', 'addProcessFailed', 'dropAllowOnlySameLevel', 'deleteConfirmation']; // Replace with the key you want to filter
-      filterKeys.map((filterKey: string, index: number) => {
-        const parser = new DOMParser();
-        // Parse the XML string
-        const xmlDoc = parser.parseFromString(data, "text/xml");
-        // Find the specific data element with the given key
-        const dataNode: any = xmlDoc.querySelector(`data[name="${filterKey}"]`);
-        // Extract the value from the data element
-        const value: any = dataNode?.querySelector("value").textContent;
-
-        if (index === 0 && value) {
-          setErrorText(value)
-        }
-        if (index === 1 && value) {
-          setSomethingWentWrong(value)
-        }
-        if (index === 2 && value) {
-          setDataLoadingFailed(value)
-        } 
-        if (index === 3 && value) {
-          setAddProcessFailed(value)
-        }
-        if (index === 4 && value) {
-          setDropAllowOnlySameLevel(value)
-        }
-        if (index === 4 && value) {
-          setDeleteConformation(value)
-        }
-        console.log('data ====> ',  index, value); 
-      });
-      // this.setState({ data });
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
-  }
 
   const retriveTemplateHandler = async () => {
     try {
@@ -200,9 +161,35 @@ const TreeView: React.FC = () => {
     setInitialLoading(false);
   }, []);
 
+
+  const messageHandler = async () => {
+    try {
+      const languageConstantsFromResourceTable : any = await loadResourceString();
+      if (languageConstantsFromResourceTable?.data && languageConstants?.length) {
+        console.log("languageConstantsFromResTable 2", languageConstantsFromResourceTable);
+        const refactorResourceTable = languageConstantsFromResourceTable?.data.reduce((result: any, currentObject: any) => {
+          return Object.assign(result, currentObject);
+        }, {});
+        if (Object.keys(refactorResourceTable).length) {
+          const originalConstants = languageConstants[0];
+          const updatedValues = refactorResourceTable[0];
+          for (const key in updatedValues) {
+            if (key in updatedValues && key in originalConstants) {
+              originalConstants[key] = updatedValues[key];
+            }
+          }
+          setLanguageConstants(originalConstants);
+        }
+      }
+    } catch (error) {
+      console.log('error ====>', error);
+    }
+  }
+
   React.useEffect(() => {
     dataLoader();
     retriveTemplateHandler();
+    messageHandler()
     // setGData(res_one);
   }, [])
 
@@ -247,8 +234,8 @@ const TreeView: React.FC = () => {
         parentValue = null;
         parentValueDrop = null;
         notification.error({
-          message: errorText,
-          description: dropAllowOnlySameLevel,
+          message: languageConstants?.TreeView_ErrorText,
+          description: languageConstants?.TreeView_DropAllowOnlySameLevel,
         });
       } else {
         if (parentValue?.a_attr?.LogicalName === LogicalNames?.SURVEY) {
@@ -443,7 +430,14 @@ const TreeView: React.FC = () => {
 
         if (type === "NOTHING") break;
         setType(type);
-        openSidePaneHandler({...rightClickedRecord, webMessage: {errorText, dataLoadingFailed, addProcessFailed, somethingWentWrong}}, (response: any) => {
+        openSidePaneHandler({
+          ...rightClickedRecord, webMessage: {
+            errorText: languageConstants?.TreeView_ErrorText,
+            dataLoadingFailed : languageConstants?.TreeView_DataLoadingFailed,
+            addProcessFailed : languageConstants?.TreeView_AddProcessFailed,
+            somethingWentWrong : languageConstants?.TreeView_SomethingWentWrong,
+          }
+        }, (response: any) => {
           console.log('final res ====> ', response);
           
           if (response.success && response.dataLoadSuccess) {
@@ -510,8 +504,8 @@ const TreeView: React.FC = () => {
     if (response && response.error) {
       parentValue = null;
       notification.error({
-        message: errorText,
-        description: somethingWentWrong,
+        message: languageConstants?.TreeView_ErrorText,
+        description: languageConstants?.TreeView_SomethingWentWrong,
       });
       setDeleteLoader(false);
     } else {
@@ -579,8 +573,8 @@ const TreeView: React.FC = () => {
     if(response.error){
       setDeleteLoader(false);
       notification.error({
-        message: errorText,
-        description: somethingWentWrong,
+        message: languageConstants?.TreeView_ErrorText,
+        description: languageConstants?.TreeView_SomethingWentWrong,
       });
     } else {
       const dataVal = gData;
@@ -781,7 +775,7 @@ const TreeView: React.FC = () => {
               setIsModalOpen(false);
             }}
           >
-            <p>{deleteConfirmation}</p>
+            <p>{languageConstants?.TreeView_DeleteConfirmation}</p>
           </Modal>
         </div>
       ) : (
