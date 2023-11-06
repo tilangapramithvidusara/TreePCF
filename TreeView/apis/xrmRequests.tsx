@@ -21,24 +21,6 @@ export const loadResourceString = async () => {
         if (index && value) {
             languageKeyValueMapper.push({ [filterKey]: value });
           }
-        // if (index === 0 && value) {
-        //   setErrorText(value)
-        // }
-        // if (index === 1 && value) {
-        //   setSomethingWentWrong(value)
-        // }
-        // if (index === 2 && value) {
-        //   setDataLoadingFailed(value)
-        // } 
-        // if (index === 3 && value) {
-        //   setAddProcessFailed(value)
-        // }
-        // if (index === 4 && value) {
-        //   setDropAllowOnlySameLevel(value)
-        // }
-        // if (index === 4 && value) {
-        //   setDeleteConformation(value)
-        // }
         console.log('data ====> ',  index, value); 
       });
       return {

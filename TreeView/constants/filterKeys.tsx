@@ -4,5 +4,6 @@ export const filterKeys = [
     "TreeView_DataLoadingFailed",
     "TreeView_AddProcessFailed",
     "TreeView_DropAllowOnlySameLevel",
-    "TreeView_DeleteConfirmation"
+    "TreeView_DeleteConfirmation",
+    "TreeView_LoadingMessage"
 ]

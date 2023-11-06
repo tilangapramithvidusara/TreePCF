@@ -189,7 +189,7 @@ const TreeView: React.FC = () => {
   React.useEffect(() => {
     dataLoader();
     retriveTemplateHandler();
-    messageHandler()
+    messageHandler();
     // setGData(res_one);
   }, [])
 
@@ -780,7 +780,7 @@ const TreeView: React.FC = () => {
         </div>
       ) : (
         <div>
-          <p>Loading ....</p>
+            <p>{ languageConstants?.TreeView_LoadingMessage}</p>
         </div>
       )}
     </div>
