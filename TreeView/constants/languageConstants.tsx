@@ -10,7 +10,7 @@ export const languageConstantsForCountry : any = {
     },
     po: {
         TreeView_ErrorText: "Error",
-        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!y",
+        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!",
         TreeView_DataLoadingFailed: "Data load failed. Plz Reload Again..!",
         TreeView_AddProcessFailed: "Add process failed. Plz Try Again..!",
         TreeView_DropAllowOnlySameLevel: "Drop allow only same level..!",
@@ -18,7 +18,7 @@ export const languageConstantsForCountry : any = {
     },
     ge: {
         TreeView_ErrorText: "Error",
-        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!y",
+        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!",
         TreeView_DataLoadingFailed: "Data load failed. Plz Reload Again..!",
         TreeView_AddProcessFailed: "Add process failed. Plz Try Again..!",
         TreeView_DropAllowOnlySameLevel: "Drop allow only same level..!",
@@ -26,7 +26,7 @@ export const languageConstantsForCountry : any = {
     },
     fr:{
         TreeView_ErrorText: "Error",
-        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!y",
+        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!",
         TreeView_DataLoadingFailed: "Data load failed. Plz Reload Again..!",
         TreeView_AddProcessFailed: "Add process failed. Plz Try Again..!",
         TreeView_DropAllowOnlySameLevel: "Drop allow only same level..!",
@@ -34,7 +34,7 @@ export const languageConstantsForCountry : any = {
     },
     sp: {
         TreeView_ErrorText: "Error",
-        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!y",
+        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!",
         TreeView_DataLoadingFailed: "Data load failed. Plz Reload Again..!",
         TreeView_AddProcessFailed: "Add process failed. Plz Try Again..!",
         TreeView_DropAllowOnlySameLevel: "Drop allow only same level..!",
@@ -42,7 +42,7 @@ export const languageConstantsForCountry : any = {
     },
     du: {
         TreeView_ErrorText: "Error",
-        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!y",
+        TreeView_SomethingWentWrong: "Something went wrong. Please Try Again..!",
         TreeView_DataLoadingFailed: "Data load failed. Plz Reload Again..!",
         TreeView_AddProcessFailed: "Add process failed. Plz Try Again..!",
         TreeView_DropAllowOnlySameLevel: "Drop allow only same level..!",
