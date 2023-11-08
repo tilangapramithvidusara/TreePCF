@@ -48,7 +48,6 @@ const openSidePane = (
   entName: string,
   entId: string,
   e: any
-  // frmId: string
 ) => {
   const openPanes = Xrm.App.sidePanes.getAllPanes();
   openPanes.forEach((item) => {
@@ -70,7 +69,6 @@ const openSidePane = (
           pageType: "entityrecord",
           entityName: entName,
           entityId: entId,
-          // formId: frmId,
         });
       });
   } else {

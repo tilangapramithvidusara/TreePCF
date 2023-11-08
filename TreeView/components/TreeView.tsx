@@ -59,11 +59,6 @@ const items: MenuProps["items"] = [
     icon: <PlusOutlined />,
     label: <div>Add</div>,
   },
-  // {
-  //   key: "6",
-  //   icon: <CopyOutlined />,
-  //   label: <div>Copy</div>,
-  // },
 ];
 
 const TreeView: React.FC = () => {
@@ -82,13 +77,6 @@ const TreeView: React.FC = () => {
   const [isSubLocation, setIsSubLocation] = useState<boolean>(false);
   const [expandedNodeDataArray, setExpandedNodeDataArray] = useState<any>([]);
   const [isDisable, setIsDisable] = useState<boolean>(false);
-
-  // const [errorText, setErrorText] = useState<string>("Error");
-  // const [somethingWentWrong, setSomethingWentWrong] = useState<string>('Something went wrong. Please Try Again..!');
-  // const [dataLoadingFailed, setDataLoadingFailed] = useState<string>("Data load failed. Plz Reload Again..!");
-  // const [addProcessFailed, setAddProcessFailed] = useState<string>("Add process failed. Plz Try Again..!");
-  // const [dropAllowOnlySameLevel, setDropAllowOnlySameLevel] = useState<string>("Drop allow only same level..!");
-  // const [deleteConfirmation, setDeleteConformation] = useState<string>("Are you sure you want to delete this ?")
   const [languageConstants, setLanguageConstants] = useState<any>(
     languageConstantsForCountry.en
   );
@@ -110,28 +98,20 @@ const TreeView: React.FC = () => {
       } else {
         surveyTemplate = await window.parent.Xrm.Page.getAttribute("gyde_surveytemplate")?.getValue()[0]?.id?.replace("{", "")
         .replace("}", "");
-      }
-      
-      console.log('id ===> ', surveyTemplate);
-      
+      }      
       window.parent.Xrm.WebApi.retrieveRecord("gyde_surveytemplate", surveyTemplate, "?$select=statuscode").then(
         function success(result: any) {
-            console.log("result status ====>", result.statuscode);
             if (result.statuscode == 528670003 || result.statuscode == 528670005 || result.statuscode == 2) {
               setIsDisable(true)
             } else {
               setIsDisable(false);
-            }
-            // perform operations on record retrieval
+            } // perform operations on record retrieval
         },
         function (error: any) {
-            console.log("error message ====> ", error.message);
-            setIsDisable(false);
-            // handle error conditions
+            setIsDisable(false); // handle error conditions
         }
       );
     } catch (error: any) {
-      console.log("error22 message ====> ", error);
       setIsDisable(false);
     }
   }
@@ -166,7 +146,6 @@ const TreeView: React.FC = () => {
     try {
       const languageConstantsFromResourceTable : any = await loadResourceString();
       if (languageConstantsFromResourceTable?.data && languageConstants?.length) {
-        console.log("languageConstantsFromResTable 2", languageConstantsFromResourceTable);
         const refactorResourceTable = languageConstantsFromResourceTable?.data.reduce((result: any, currentObject: any) => {
           return Object.assign(result, currentObject);
         }, {});
@@ -190,7 +169,6 @@ const TreeView: React.FC = () => {
     dataLoader();
     retriveTemplateHandler();
     messageHandler();
-    // setGData(res_one);
   }, [])
 
   const findParent = (tree: any, key: any, parent: any) => {
@@ -261,7 +239,6 @@ const TreeView: React.FC = () => {
           
           addObjectToTree(gData[0], parentValue.key, []);
           const nodeData = await createDataLoadRequest(parentValue);
-          console.log("treeData pppp ", nodeData, parentValue, parentValue?.key);
           addObjectToTree(gData[0], parentValue?.key, nodeData);
           setGData(gData);
           onLoadHandler(parentValue);
@@ -279,13 +256,6 @@ const TreeView: React.FC = () => {
   };
 
   const changeItemName = (node: any) => {
-    // const formType = checkType(node);
-
-    // let addType = "Add";
-    // if (formType === FormTypes.SURVEY) addType = Texts.ADD_CHAPTER;
-    // if (formType === FormTypes.CHAPTER) addType = Texts.ADD_SECTION;
-    // if (formType === FormTypes.SECTION) addType = Texts.ADD_QUESTION;
-    // if (formType === FormTypes.QUESTION) addType = Texts.ADD_ANSWER;
     if (node.haveNextlevel) {
       if (items.find((item) => item?.key === "5")) {
         items[items.findIndex((item: any) => item?.key === "5")] = {
@@ -305,19 +275,11 @@ const TreeView: React.FC = () => {
         items.splice(items.findIndex((item: any) => item?.key === "5"), 1);
       }
     }
-    // items[items.length - 1] = {
-    //   key: "5",
-    //   icon: <PlusOutlined />,
-    //   label: <div>{node?.nextLevelDisplayName}</div>,
-    // };
   };
 
   const onRightClick = (info: { event: React.MouseEvent; node: any }) => {
-    info.event.preventDefault();
-    console.log('right =======> ', info?.node, info?.node?.isVisible, info?.node?.haveNextlevel);
-    
+    info.event.preventDefault();    
     changeItemName(info?.node);
-    // setRightClickedRecord({ ...rightClickedRecord, ...info.node });
     if((info?.node as any)?.isVisible){
       const obj = {
         key: "2",
@@ -437,9 +399,7 @@ const TreeView: React.FC = () => {
             addProcessFailed : languageConstants?.TreeView_AddProcessFailed,
             somethingWentWrong : languageConstants?.TreeView_SomethingWentWrong,
           }
-        }, (response: any) => {
-          console.log('final res ====> ', response);
-          
+        }, (response: any) => {          
           if (response.success && response.dataLoadSuccess) {
             setDeleteLoader(true);
             const res_two = response.data;
@@ -474,7 +434,6 @@ const TreeView: React.FC = () => {
           }
         });
         break;
-        // setAddFormVisible(true);
       }
       default:
         break;
@@ -499,8 +458,6 @@ const TreeView: React.FC = () => {
         {statuscode: STATUS_CODE, statecode: 1}
       );
     }
-    console.log("res....", response);
-    // setDeleteLoader(true);
     if (response && response.error) {
       parentValue = null;
       notification.error({
@@ -508,12 +465,9 @@ const TreeView: React.FC = () => {
         description: languageConstants?.TreeView_SomethingWentWrong,
       });
       setDeleteLoader(false);
-    } else {
-      console.log('success delete');
-      
+    } else {      
       if (rightClickedRecord.level == 2) {
         const nodeData = await createDataLoadRequest();
-        console.log("treeData pppp ",nodeData);
         setExpandedKeys([]);
         setTimeout(() => {
           setGData(nodeData);
@@ -521,7 +475,6 @@ const TreeView: React.FC = () => {
         
       } else {
         const nodeData = await createDataLoadRequest(parentValue);
-        console.log("treeData1 pppp ",nodeData);
         const expanedList = expandedKeys;
         setExpandedKeys([]);
         addObjectToTree(gData[0], parentValue.key, nodeData);
@@ -600,7 +553,6 @@ const TreeView: React.FC = () => {
   const onClickNode = (selectedKeys: any, e: any) => {
     const { node } = e;
     const info = { expanded: true, node: {} };
-    // handleExpand(selectedKeys, info)
     openSidePane(node.a_attr.LogicalName, node.id, node);
   };
 
@@ -622,8 +574,6 @@ const TreeView: React.FC = () => {
       tree.children.forEach((child: any) =>
         addObjectToTree(child, key, newObject)
       );
-    } else {
-      // console.log('elese [[[[[[[');
     }
   }
 
@@ -677,7 +627,6 @@ const TreeView: React.FC = () => {
     ) {
       const res_two = await createDataLoadRequest({...node, isSubLocation: false});
       setExpandedNodeDataArray([...expandedNodeDataArray, {data: res_two, parentKey: node.key,}]);
-      console.log('res two ===> ', res_two);
       
       node.children = res_two;
       if (
@@ -686,14 +635,11 @@ const TreeView: React.FC = () => {
       ) {
         if (isSubLocation) {
           gData.map((gItem: any) => addObjectToTree(gItem, node.key, res_two))
-          // addObjectToTree([{...gData}], node.key, res_two);
         } else {
           addObjectToTree(gData[0], node.key, res_two);
         }
       }
-        // addObjectToTree(gData[0], node.key, res_two);
       setGData((prevTreeData: any) => {
-        // const updatedTreeData = [...prevTreeData]
         const updatedTreeData = cloneDeep(gData);
         // Find the parent node in the tree data array
         const parentNode = updatedTreeData.find(

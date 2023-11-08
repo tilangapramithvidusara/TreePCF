@@ -10,9 +10,7 @@ declare global {
   }
 }
 
-export const createDataLoadRequest = async (node?: any): Promise<any[]> => {
-  console.log("node node ====> ", node);
-  
+export const createDataLoadRequest = async (node?: any): Promise<any[]> => {  
   try {
     var req: any = {};
     var parameterTypes: any = {
@@ -72,9 +70,7 @@ export const createDataLoadRequest = async (node?: any): Promise<any[]> => {
         }
       })
       .then(function (responseBody: any) {
-        const resData = JSON.parse(responseBody.nodedata);
-        console.log('lll ==> ', (node && node.id && resData.length > 0), !(node && node.id));
-        
+        const resData = JSON.parse(responseBody.nodedata);        
         const data =
           (node && node.id && resData.length > 0) || !(node && node.id)
             ? dataFomater(node, JSON.parse(responseBody.nodedata))
@@ -85,7 +81,6 @@ export const createDataLoadRequest = async (node?: any): Promise<any[]> => {
         return [];
       });
     await Promise.all([surveyTemplate, result])
-    console.log("tree data",result);
     return result;
   } catch (error) {
     return [];
@@ -103,10 +98,8 @@ export const updateDataRequest = async (
       id,
       data
     );
-    console.log("update result",result);
     return { error: false, data: result };
   } catch (error: any) {
-    console.log("update error",error);
     return { error: true, data: {} };
   }
 };

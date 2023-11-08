@@ -14,7 +14,6 @@ export class TreeView implements ComponentFramework.StandardControl<IInputs, IOu
         state: ComponentFramework.Dictionary,
         container: HTMLDivElement
       ) {
-        // Save the container element for later use
         this.container = container;
         
       }

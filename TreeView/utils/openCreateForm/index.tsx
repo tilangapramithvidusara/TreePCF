@@ -8,7 +8,6 @@ export const openCreatePane = async (
   node: any,
   title: string,
   entName: string,
-  // frmId: string
   callback: any,
 ) => {
   let parentData = [
@@ -47,11 +46,6 @@ export const openCreatePane = async (
     
     const nodeGyde = await window.parent.Xrm.WebApi.retrieveRecord(node.a_attr.LogicalName, node?.id, "?$select=gyde_internalid")
     parameterFormOptions['gyde_parentid'] = nodeGyde['gyde_internalid'];
-    // window.parent.Xrm.WebApi.retrieveRecord("gyde_surveytemplatechaptersectionquestion", "79ca0bc1-b948-ee11-be6f-6045bdd0ef22", "?$select=gyde_internalid").then(
-    //   function success(result) {
-    //     console.log(result);
-    //     console.log(result["gyde_internalid"])
-    //   })
 
   }
  
@@ -65,7 +59,6 @@ export const openCreatePane = async (
       try {
         const nodeValue = node.a_attr.LogicalName === LogicalNames.SURVEY ? null : node;
         const result = await createDataLoadRequest(nodeValue);
-        console.log("data set yy ====> ", result);
         await Promise.all([result]);
         callback({
           success: true,
@@ -73,7 +66,6 @@ export const openCreatePane = async (
           data: result
         });
       } catch (error) {
-        console.log('error catch ====> ', error);
         notification.error({
           message: node?.webMessage?.errorText,
           description: node?.webMessage?.dataLoadingFailed,
@@ -94,8 +86,6 @@ export const openCreatePane = async (
       })
     }
   } catch (error) {
-    console.log("error =====> ", error);
-
     notification.error({
       message: node?.webMessage?.errorText,
       description: node?.webMessage?.addProcessFailed,
