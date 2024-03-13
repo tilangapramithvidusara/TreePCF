@@ -2,7 +2,7 @@
 /* eslint-disable no-undef */
 import * as React from "react";
 import * as ReactDOM from 'react-dom';
-import { useCallback, useState } from "react";
+import { useCallback, useState ,useEffect } from "react";
 import Tree from "antd/es/tree";
 import type { DataNode, TreeProps } from "antd/es/tree";
 import type { MenuProps } from "antd/es/menu";
@@ -40,6 +40,7 @@ import { res_one, res_two } from "./sample_real_data";
 
 import cloneDeep from "lodash.clonedeep";
 import { loadResourceString } from "../apis/xrmRequests";
+import { getCurrentNodeById } from "../apis/azureApi";
 
 const { LogicalNames, Texts, FormTypes, STATUS_CODE } = Constants;
 
@@ -89,6 +90,9 @@ const TreeView: React.FC = () => {
   // const [addProcessFailed, setAddProcessFailed] = useState<string>("Add process failed. Plz Try Again..!");
   // const [dropAllowOnlySameLevel, setDropAllowOnlySameLevel] = useState<string>("Drop allow only same level..!");
   // const [deleteConfirmation, setDeleteConformation] = useState<string>("Are you sure you want to delete this ?")
+ let v1 = 2
+  console.log("deployed$",v1);
+  
   const [languageConstants, setLanguageConstants] = useState<any>(
     languageConstantsForCountry.en
   );
@@ -156,7 +160,119 @@ const TreeView: React.FC = () => {
         isSubLocation: true,
       });
     }
-    setGData(res);
+
+    console.log("gData",res);
+    currentLocation === LogicalNames?.SURVEY &&  setGData(res)
+   
+
+    if(res?.length){
+      console.log("currentLocation",currentLocation,LogicalNames?.SURVEY,res[0]?.key);
+      if(currentLocation  ===  LogicalNames?.SURVEY ){
+        // setExpandedKeys([res[0]?.key]) 
+      }
+      if(currentLocation  ===  LogicalNames?.CHAPTER ){
+        // setExpandedKeys([res[0]?.key]) 
+        let getParentNode = await createDataLoadRequest();
+        console.log("getParentNode",getParentNode);
+        const currentData = await window.parent.Xrm.Page.data.entity
+        .getId()
+        .replace("{", "")
+        .replace("}", "");
+  
+        const   sectionData= res;
+        const currentExpandNodeKeys :Array<any> = []
+        const findCurrentChapter = (node :any) => {
+          return node?.map((item:any) => {
+              if (item?.key.toLowerCase() === currentData?.toLowerCase()) {
+                currentExpandNodeKeys.push(item?.key)
+                return { ...item,children:sectionData};
+              }
+              if (item?.children?.length) {
+                  const updatedChildren = findCurrentChapter(item.children);
+                  currentExpandNodeKeys.push(item?.key)
+                  return { ...item, children: updatedChildren };
+              }
+              return null;
+          }).filter(Boolean);
+      };
+      const _createdData = findCurrentChapter(getParentNode)
+      console.log("_createdData",_createdData);
+      
+      setGData(_createdData);
+      console.log("currentExpandNodeKeys",currentExpandNodeKeys);
+      setExpandedKeys([...currentExpandNodeKeys])
+      
+      }
+      if(currentLocation  ===  LogicalNames?.SECTION ){
+
+   
+        const childNode :any = res
+        let getParentNode = await createDataLoadRequest();
+        let SurveyTemplate = window.parent.Xrm.Page.getAttribute(LogicalNames?.SURVEY).getValue()[0]?.id?.replace("{", "").replace("}", "");
+        let chapterSection =   window.parent.Xrm.Page.getAttribute(LogicalNames?.CHAPTER).getValue()[0]?.id?.replace("{", "").replace("}", "");
+        const currentSectionId = await window.parent.Xrm.Page.data.entity
+        .getId()
+        .replace("{", "")
+        .replace("}", "");
+        let data = {
+          chapterId:chapterSection.toLowerCase(),
+          surveyTempId:SurveyTemplate.toLowerCase(),
+          sectionId:currentSectionId.toLowerCase()
+        }
+      const _SectionData =   await getCurrentNodeById(data);
+       console.log("_SectionData",_SectionData);
+       
+        window.parent.Xrm.Page.getAttribute(LogicalNames?.CHAPTER).getValue()[0]?.id?.replace("{", "").replace("}", "");
+
+        console.log("getParetNode",getParentNode,childNode,res);
+        console.log("",SurveyTemplate);
+        console.log("",chapterSection);
+        const currentExpandNodeKeys :Array<any> = []
+        const createParentLevel = (node :any, level  :number= 1) => {
+          console.log("node", node);
+          if (!node) {
+              return [];
+            }
+          return node.map((currentNode :any) => {
+            console.log("currentNode", level === 2 && currentNode?.id, chapterSection);
+            if (
+              currentNode?.id.toLowerCase() ===
+              (level === 1
+                ? SurveyTemplate.toLowerCase()
+                : level === 2
+                ? chapterSection.toLowerCase()
+                : "")
+            ) {
+              let childArr = createParentLevel(currentNode?.children, 2);
+              if (typeof childArr === "object" &&childArr?.length) {
+                  childArr[0].children = _SectionData?.data;
+                }else {
+                  childArr =[]
+                }
+                
+              return { ...currentNode, children: childArr };
+            } else {
+              return { ...currentNode };
+            }
+          }).filter(Boolean);
+        };
+        console.log("getParentNode",createParentLevel(getParentNode),currentExpandNodeKeys);
+
+         currentExpandNodeKeys.push(SurveyTemplate,chapterSection.toLowerCase(),currentSectionId.toLowerCase())
+         const _nodeWithLevel = createParentLevel(getParentNode);
+         console.log("_nodeWithLevel",currentExpandNodeKeys,_nodeWithLevel);
+         setGData(_nodeWithLevel)
+         setExpandedKeys([...currentExpandNodeKeys])
+         
+      }if(currentLocation  ===  LogicalNames?.QUESTION){
+        console.log("questionLevl");
+        
+        setGData(res)
+      }
+     
+    }
+   
+   
     loadResourceString();
     setInitialLoading(false);
   }, []);
@@ -395,6 +511,9 @@ const TreeView: React.FC = () => {
   };
 
   const onClick: MenuProps["onClick"] = ({ key }) => {
+
+    console.log("click",rightClickedRecord);
+    
     switch (key) {
       case "1": {
         // Copy functionality invoked...
@@ -605,11 +724,41 @@ const TreeView: React.FC = () => {
   };
 
   const handleExpand = (
-    expandedKeys: Key[],
+    expandedKey: Key[],
     info: { expanded: boolean; node: any }
   ) => {
     const { node, expanded } = info;
-    setExpandedKeys(expandedKeys);
+
+    console.log("expanded",node,info,expanded,expandedKeys);
+    
+
+    if(expanded){
+      setExpandedKeys(expandedKey);
+    }else{
+      const  getAllKeys =(node :any) =>{
+        let arr  :any = [];
+      
+        node?.forEach((n :any) => {
+          if (n?.key ) {
+            arr.push(n?.key);
+            const children = n?.children?.length && getAllKeys(n.children);
+            arr = arr.concat(children);
+          }
+        });
+      
+        return arr.filter(Boolean);
+      }
+      
+     const keys = getAllKeys([node])
+      console.log("removeKeys",expandedKeys,keys,keys,getAllKeys([node]));
+
+      const filteredArr2 = expandedKeys.filter(item => !keys.includes(item));
+      console.log("filteredArr2",expandedKeys,filteredArr2);
+      setExpandedKeys(filteredArr2);
+      
+    }
+
+
   };
 
   let data = gData;
@@ -671,8 +820,10 @@ const TreeView: React.FC = () => {
   };
 
   const onLoadHandler = async(node: any) => {
+    console.log("intial Load",node);
+    
     if (
-      !(node.a_attr.LogicalName === LogicalNames.SURVEY) &&
+      !(node?.a_attr.LogicalName === LogicalNames.SURVEY) &&
       node.hasChildren
     ) {
       const res_two = await createDataLoadRequest({...node, isSubLocation: false});
@@ -710,6 +861,15 @@ const TreeView: React.FC = () => {
     return node;
   }
 
+  useEffect(()=> {
+  console.log("RenderEvery",gData);
+  
+  },[gData])
+
+  useEffect(()=> {
+    console.log("expandedKeysLoad",expandedKeys);
+    
+    },[expandedKeys])
   return (
     <div className="custom-container" id="custom-container">
       { !initialLoading ? (

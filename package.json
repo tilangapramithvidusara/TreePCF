@@ -16,6 +16,7 @@
     "@ant-design/icons": "^5.0.1",
     "@types/lodash.clonedeep": "^4.5.7",
     "antd": "^5.4.4",
+    "axios": "^1.6.7",
     "lodash.clonedeep": "^4.5.0",
     "react-dom": "^18.2.0"
   },
