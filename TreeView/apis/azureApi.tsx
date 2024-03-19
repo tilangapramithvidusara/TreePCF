@@ -1,17 +1,40 @@
 import axios from 'axios';
   
-  export const getCurrentNodeById =  async(data :any) => {
+  export const getCurrentNodeById =  async(_payload :any) => {
    
  try{
-    console.log("curretNodeData ",data);
-    
-    const result = await axios.post('https://designv2-fapp-uk-dv.azurewebsites.net/api/CreateSurveyTree?code=dTlMuN-mERzuiab6hFH68cXKWp6ob5DiDMET2wtZb-1lAzFuduMi8w==',data)     
-    console.log("result",result);
-    console.log("APi Azure",result,result?.data?.Value);
-    console.log("APi Azure1",JSON.parse(result?.data?.Value));
-    return {type:'Success',data:JSON.parse(result?.data?.Value)}
+
+    console.log("curretNodeData ",_payload);
+    const url = await window.parent.Xrm.Utility.getGlobalContext().getClientUrl();
+    const language = await window.parent.Xrm.Utility.getGlobalContext().userSettings.languageId
+    const webResourceUrl = `${url}/WebResources/gyde_surveybukactionsettings.json`;
+
+    try {
+      const response = await fetch(`${webResourceUrl}`);
+      console.log("response",response);
+      
+      const data = await response.text();
+      console.log("data",data, typeof data );
+
+      const jsonObject = JSON.parse(data);
+  console.log("jsonObject",jsonObject);
+  
+      // Retrieve the value of Gyde365Survey/SurveyTreeAzureFunctionUrl
+      const surveyTreeAzureFunctionUrl = jsonObject["Gyde365Survey/SurveyTreeAzureFunctionUrl"];
+      
+      console.log("surveyTreeAzureFunctionUrl",surveyTreeAzureFunctionUrl);
+   
+      const result = await axios.post(surveyTreeAzureFunctionUrl,_payload)     
+      console.log("result",result);
+      console.log("APi Azure",result,result?.data?.Value);
+      console.log("APi Azure1",JSON.parse(result?.data?.Value));
+      return {type:'Success',data:JSON.parse(result?.data?.Value)}
+  
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
  }catch(e){
-    console.log("error current node",e,data)
+    console.log("error current node",e,_payload)
  }
     
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
 <!-- 1.23.134.4994  "1.0.42" -->
-  <control namespace="Seer365Controls" constructor="TreeView" version="1.23.263" display-name-key="TreeView" description-key="TreeView description" control-type="standard" >
+  <control namespace="Seer365Controls" constructor="TreeView" version="1.23.338" display-name-key="TreeView" description-key="TreeView description" control-type="standard" >
     <property 
       name="sampleProperty" 
       display-name-key="Property_Display_Key" 

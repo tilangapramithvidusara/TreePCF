@@ -219,7 +219,7 @@ const TreeView: React.FC = () => {
           surveyTempId:SurveyTemplate.toLowerCase(),
           sectionId:currentSectionId.toLowerCase()
         }
-      const _SectionData =   await getCurrentNodeById(data);
+      const _SectionData:any =   await getCurrentNodeById(data);
        console.log("_SectionData",_SectionData);
        
         window.parent.Xrm.Page.getAttribute(LogicalNames?.CHAPTER).getValue()[0]?.id?.replace("{", "").replace("}", "");
